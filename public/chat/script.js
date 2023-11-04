@@ -1,3 +1,5 @@
+const lib = ChatLib({});
+
 function initSocketIO() {
   const socket = io();
 
@@ -5,8 +7,6 @@ function initSocketIO() {
     console.log("Connected to server");
   });
 }
-
-initSocketIO();
 
 function showLoginScreen() {
   const appContainer = document.getElementById("app");
@@ -29,7 +29,15 @@ function showLoginScreen() {
   formEl.addEventListener("submit", async (ev) => {
     ev.preventDefault();
 
-    console.log("submit", ev);
+    const isLoggedin = lib.login({
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value,
+    });
+
+    if (isLoggedin) {
+      showChatScreen();
+      initSocketIO();
+    }
   });
 
   appContainer.appendChild(formEl);
@@ -96,7 +104,12 @@ function addMessage(msg) {
 }
 
 function init() {
-  showLoginScreen();
+  if (lib.isLoggedIn()) {
+    showChatScreen();
+    initSocketIO();
+  } else {
+    showLoginScreen();
+  }
 }
 
 init();
