@@ -1,10 +1,23 @@
 const lib = ChatLib({});
 
+let socket = null;
+
 function initSocketIO() {
-  const socket = io();
+  socket = io();
 
   socket.on("connect", () => {
+    const client = lib.getClient();
+    socket.emit("join", client.channel);
     console.log("Connected to server");
+  });
+
+  socket.on("joined", (msg) => {
+    addSystemMessage(`Joined room: "${msg}"`);
+  });
+
+  socket.on("receive", (msg) => {
+    const data = JSON.parse(msg);
+    addMessage(data.username, data.message);
   });
 }
 
@@ -16,12 +29,16 @@ function showLoginScreen() {
   formEl.id = "loginform";
   formEl.innerHTML = `
 <div>
-  <label for="username">Username</label>
-  <input id="username" class="input" placeholder="Enter Username">
+  <label for="channel">Channel</label>
+  <input id="channel" class="input" placeholder="Enter Channel">
 </div>
 <div>
   <label for="password">Password</label>
   <input id="password" class="input" type="password" placeholder="Enter Password">
+</div>
+<div>
+  <label for="username">Username</label>
+  <input id="username" class="input" placeholder="Enter Username">
 </div>
 <input class="primary-btn" type="submit" value="Log In">
 `;
@@ -30,6 +47,7 @@ function showLoginScreen() {
     ev.preventDefault();
 
     const isLoggedin = lib.login({
+      channel: document.getElementById("channel").value,
       username: document.getElementById("username").value,
       password: document.getElementById("password").value,
     });
@@ -70,7 +88,15 @@ function showChatScreen() {
       return;
     }
 
-    inputEl.value = "";
+    if (socket) {
+      const client = lib.getClient();
+      socket.emit("broadcast", JSON.stringify({
+        username: client.username,
+        message: inputEl.value,
+      }));
+      addMessage(client.username, inputEl.value);
+      inputEl.value = "";
+    }
   });
 
   appContainer.appendChild(toolbar);
@@ -86,19 +112,30 @@ function addSystemMessage(msg) {
   container.appendChild(msgEl);
 }
 
-function addMessage(msg) {
+const pad2 = (n) => n < 10 ? `0${n}` : n;
+
+function addMessage(username, msg) {
   const container = document.getElementById("messages");
 
   const now = new Date();
   const h = now.getHours();
-  const timeStr = `${h % 12}:${now.getMinutes()} ${h >= 12 ? "pm" : "am"}`;
+  let hh = h % 12;
+  hh = hh === 0 ? 12 : hh;
+  const timeStr = `${pad2(hh)}:${pad2(now.getMinutes())} ${h >= 12 ? "pm" : "am"}`;
 
   const msgEl = document.createElement("div");
   msgEl.className = "message";
   msgEl.innerHTML = `
-  <div class="time">${timeStr}</div>
-  <div class="text">${msg}</div>
+  <div class="info">
+    <span class="username">${username}</span>
+    <span class="time">${timeStr}</span>
+  </div>
   `;
+
+  const textEl = document.createElement('pre');
+  textEl.className = "text";
+  textEl.innerHTML = msg;
+  msgEl.appendChild(textEl);
 
   container.appendChild(msgEl);
 }
