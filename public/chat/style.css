@@ -45,13 +45,32 @@ html, body {
 }
 
 .message {
-    margin-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+.message .info {
+    margin-bottom: 4px;
+    padding-left: 12px;
+}
+
+.message .username {
+    display: inline-block;
+    margin-right: 4px;
+    font-weight: 600;
+    font-size: 15px;
 }
 
 .message .time {
     font-size: 14px;
-    margin-bottom: 6px;
     color: #616161;
+}
+
+.message .text {
+    display: block;
+    background-color: #E0E0E0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    margin: 0;
 }
 
 .message.system {
