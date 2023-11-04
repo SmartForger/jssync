@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "pack": "node pack.js"
+    "pack": "npm run build && node pack.js"
   },
   "keywords": [],
   "author": "",
