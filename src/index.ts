@@ -2,6 +2,7 @@ import express, { Request, Response, Application } from "express";
 import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
+import { apiRoutes } from "./api";
 
 //For env File
 dotenv.config();
@@ -12,6 +13,8 @@ const port = process.env.PORT || 8000;
 app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Express and TypeScript Server");
 });
+
+app.use("/api", apiRoutes());
 
 app.use(express.static("public"));
 
