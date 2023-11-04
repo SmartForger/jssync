@@ -15,7 +15,11 @@ export function setupSocketIO(server: HttpServer) {
     });
 
     socket.on("broadcast", (msg) => {
-      socket.broadcast.emit("receive", msg);
+      try {
+        for (const room of socket.rooms.entries()) {
+          socket.broadcast.to(room).emit("receive", msg);
+        }
+      } catch {}
     });
   });
 }
