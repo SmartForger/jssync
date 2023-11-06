@@ -1,7 +1,9 @@
 const ChatLib = ({ server = "" }) => {
   const STORAGE_KEY_AUTH = "auth";
+  const STORAGE_KEY_DISPLAYNAME = "displayname";
 
   let channel = {};
+  let displayname = '';
   let publicKey = "";
 
   async function getPublicKey() {
@@ -60,15 +62,16 @@ const ChatLib = ({ server = "" }) => {
       }
 
       const payload = aesDecrypt(responseData, nonce);
+      channel = JSON.parse(payload);
+      displayname = data.displayname;
 
-      const channel = JSON.parse(payload);
       const authData = {
-        id: channel.id,
-        secret: channel.secret,
-        displayname: data.displayname,
-      };
-
+        k1: publicKey,
+        k2: btoa(nonce),
+        d: responseData
+      }
       localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(authData));
+      localStorage.setItem(STORAGE_KEY_DISPLAYNAME, data.displayname);
 
       return true;
     } catch (e) {
@@ -86,11 +89,28 @@ const ChatLib = ({ server = "" }) => {
     return channel;
   }
 
+  function getDisplayName() {
+    return displayname;
+  }
+
   async function loadLocalData() {
-    const data = localStorage.getItem(STORAGE_KEY_AUTH);
-    if (data) {
-      channel = JSON.parse(data);
-      console.log(111, channel)
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_AUTH);
+      displayname = localStorage.getItem(STORAGE_KEY_DISPLAYNAME);
+
+      if (data) {
+        const authInfo = JSON.parse(data);
+        const pkey = await getPublicKey();
+        if (!authInfo.k1 || authInfo.k1 !== pkey) {
+          return;
+        }
+
+        const nonce = atob(authInfo.k2);
+        const d = aesDecrypt(authInfo.d, nonce);
+        channel = JSON.parse(d);
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -102,15 +122,15 @@ const ChatLib = ({ server = "" }) => {
     const encryptedKey = rsaEncrypt(btoa(aesKey), publicKey);
 
     return { msg: encryptedMsg, key: encryptedKey };
-  }
-
-  loadLocalData();
+  };
 
   return {
     login,
     isLoggedIn,
     getChannel,
+    getDisplayName,
     getPublicKey,
     getSocketMessage,
+    loadLocalData,
   };
 };
