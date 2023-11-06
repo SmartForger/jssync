@@ -88,14 +88,13 @@ function showChatScreen() {
     }
 
     if (socket) {
-      const channel = lib.getChannel();
       const data = JSON.stringify({
-        username: channel.id,
+        username: lib.getDisplayName(),
         message: inputEl.value,
       });
 
       socket.emit("broadcast", await lib.getSocketMessage(data));
-      addMessage(channel.id, inputEl.value);
+      addMessage(lib.getDisplayName(), inputEl.value);
       inputEl.value = "";
     }
   });
@@ -143,8 +142,9 @@ function addMessage(username, msg) {
   container.appendChild(msgEl);
 }
 
-function init() {
-  console.log(111, lib.isLoggedIn());
+async function init() {
+  await lib.loadLocalData();
+
   if (lib.isLoggedIn()) {
     showChatScreen();
     initSocketIO();
