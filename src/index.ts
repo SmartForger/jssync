@@ -1,11 +1,21 @@
 import express, { Request, Response, Application } from "express";
 import bodyParser from "body-parser";
+import forge from "node-forge";
 import cors from 'cors';
 import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
-import { generateRSAKeys, privateKeyPem } from "./cipher";
+import { generateRSAKeys, privateKey, privateKeyPem, publicKey } from "./cipher";
+
+declare global {
+  namespace Express {
+    export interface Request {
+      decryptedPayload: object;
+      nonce: string;
+    }
+  }
+}
 
 //For env File
 dotenv.config();
@@ -13,7 +23,7 @@ dotenv.config();
 const app: Application = express();
 const port = process.env.PORT || 8000;
 
-app.use(bodyParser.json());
+app.use(bodyParser.text());
 app.use(cors());
 
 app.get("/", (req: Request, res: Response) => {
