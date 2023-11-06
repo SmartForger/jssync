@@ -13,12 +13,22 @@ export function createChannel(user: User) {
   };
 
   setData(`c:${user.username}`, channel);
+  setData(`ci:${channelId}`, channel);
 
   return channel;
 }
 
 export function getChannel(user: User) {
   const channel = getData(`c:${user.username}`);
+  if (!channel) {
+    return null;
+  }
+
+  return channel as Channel;
+}
+
+export function getChannelById(cid: string) {
+  const channel = getData(`ci:${cid}`);
   if (!channel) {
     return null;
   }

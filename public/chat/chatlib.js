@@ -115,13 +115,11 @@ const ChatLib = ({ server = "" }) => {
   }
 
   async function getSocketMessage(data) {
-    const aesKey = forge.random.getBytesSync(32);
-    const encryptedMsg = aesEncrypt(data, aesKey);
-
+    const encryptedMsg = aesEncrypt(data, atob(channel.secret));
     const publicKey = await getPublicKey();
-    const encryptedKey = rsaEncrypt(btoa(aesKey), publicKey);
+    const cid = rsaEncrypt(channel.id, publicKey);
 
-    return { msg: encryptedMsg, key: encryptedKey };
+    return {t: encryptedMsg, c: cid};
   };
 
   return {

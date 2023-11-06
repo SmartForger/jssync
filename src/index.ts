@@ -1,12 +1,11 @@
 import express, { Request, Response, Application } from "express";
 import bodyParser from "body-parser";
-import forge from "node-forge";
 import cors from 'cors';
 import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
-import { generateRSAKeys, privateKey, privateKeyPem, publicKey } from "./cipher";
+import { generateRSAKeys } from "./cipher";
 
 declare global {
   namespace Express {
