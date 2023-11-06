@@ -2,11 +2,12 @@ import { Router } from "express";
 import { adminApiRoutes } from "./admin";
 import forge from "node-forge";
 import { publicKey } from "./cipher";
+import { adminMiddleware, nonceMiddleware } from "./middlewares";
 
 export function apiRoutes() {
   const router = Router();
 
-  router.post("/login", (_, res) => {
+  router.post("/login", nonceMiddleware, (_, res) => {
     res.send("login ok");
   });
 
@@ -14,7 +15,7 @@ export function apiRoutes() {
     res.send({ key: publicKey ? forge.pki.publicKeyToPem(publicKey) : "" });
   });
 
-  router.use("/admin", adminApiRoutes());
+  router.use("/admin", nonceMiddleware, adminMiddleware, adminApiRoutes());
 
   return router;
 }
