@@ -3,7 +3,7 @@ import { adminApiRoutes } from "./admin";
 import forge from "node-forge";
 import { publicKey } from "./cipher";
 import { adminMiddleware, nonceMiddleware } from "./middlewares";
-import { getChannel } from "./channel";
+import { getChannel, getChannelById } from "./channel";
 import { User } from "./types";
 import { sendEncryptedResponse } from "./utils";
 
@@ -19,6 +19,18 @@ export function apiRoutes() {
     }
 
     sendEncryptedResponse(res, req.nonce, 200, channel);
+  });
+
+  router.post("/haschannel", nonceMiddleware, (req, res) => {
+    const data = req.decryptedPayload as { cid: string };
+    const channel = getChannelById(data.cid);
+
+    if (!channel) {
+      res.status(404).json({ error: "not found" });
+      return;
+    }
+
+    sendEncryptedResponse(res, req.nonce, 200, { haschannel: true });
   });
 
   router.get("/_key", (_, res) => {

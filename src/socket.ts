@@ -1,6 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
-import { aesDecrypt, decryptRSA } from "./cipher";
+import { aesDecrypt, aesEncrypt, decryptRSA } from "./cipher";
 import { getChannelById } from "./channel";
 
 let io: Server;
@@ -24,7 +24,9 @@ export function setupSocketIO(server: HttpServer) {
         }
 
         const message = JSON.parse(decrypted.data);
-        socket.broadcast.to(decrypted.cid).emit("receive", message);
+        socket.broadcast
+          .to(decrypted.cid)
+          .emit("receive", encryptSocketResponse(decrypted.cid, message));
       } catch (e) {
         console.log(e);
       }
@@ -43,6 +45,15 @@ function decryptSocketMessage(data: { t: string; c: string }) {
     data: aesDecrypt(data.t, channel.secret),
     cid,
   };
+}
+
+function encryptSocketResponse(cid: string, data: string) {
+  const channel = getChannelById(cid);
+  if (!channel) {
+    return "";
+  }
+
+  return aesEncrypt(JSON.stringify(data), channel.secret);
 }
 
 export function getSocketIO() {

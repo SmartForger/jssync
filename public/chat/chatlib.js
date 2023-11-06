@@ -3,7 +3,7 @@ const ChatLib = ({ server = "" }) => {
   const STORAGE_KEY_DISPLAYNAME = "displayname";
 
   let channel = {};
-  let displayname = '';
+  let displayname = "";
   let publicKey = "";
 
   async function getPublicKey() {
@@ -35,41 +35,19 @@ const ChatLib = ({ server = "" }) => {
 
   async function login(data) {
     try {
-      const publicKey = await getPublicKey();
-      const { nonce, encrypted } = generateNonce(publicKey);
-      const encryptedData = aesEncrypt(
-        JSON.stringify({
-          username: data.username,
-          password: data.password,
-        }),
-        nonce
-      );
-
-      const resp = await fetch(`${server}/api/login`, {
-        method: "POST",
-        body: encryptedData,
-        headers: {
-          sync_nonce: encrypted,
-        },
+      const { data: ch, nonce, responseData } = await apiRequest(`${server}/api/login`, {
+        username: data.username,
+        password: data.password,
       });
 
-      const responseData = await resp.text();
-      if (!resp.ok) {
-        throw {
-          status: resp.status,
-          data: responseData,
-        };
-      }
-
-      const payload = aesDecrypt(responseData, nonce);
-      channel = JSON.parse(payload);
+      channel = ch;
       displayname = data.displayname;
 
       const authData = {
         k1: publicKey,
         k2: btoa(nonce),
-        d: responseData
-      }
+        d: responseData,
+      };
       localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(authData));
       localStorage.setItem(STORAGE_KEY_DISPLAYNAME, data.displayname);
 
@@ -108,10 +86,47 @@ const ChatLib = ({ server = "" }) => {
         const nonce = atob(authInfo.k2);
         const d = aesDecrypt(authInfo.d, nonce);
         channel = JSON.parse(d);
+
+        const { data: response } = await apiRequest(`${server}/api/haschannel`, {
+          cid: channel.id,
+        });
+        if (!response.haschannel) {
+          channel = {};
+        }
       }
     } catch (e) {
+      channel = {};
       console.error(e);
     }
+  }
+
+  async function apiRequest(url, dataObj) {
+    const publicKey = await getPublicKey();
+    const { nonce, encrypted } = generateNonce(publicKey);
+    const encryptedData = aesEncrypt(JSON.stringify(dataObj), nonce);
+
+    const resp = await fetch(url, {
+      method: "POST",
+      body: encryptedData,
+      headers: {
+        sync_nonce: encrypted,
+      },
+    });
+
+    const responseData = await resp.text();
+    if (!resp.ok) {
+      throw {
+        status: resp.status,
+        data: responseData,
+      };
+    }
+
+    const payload = aesDecrypt(responseData, nonce);
+    return {
+      data: JSON.parse(payload),
+      nonce,
+      responseData,
+    };
   }
 
   async function getSocketMessage(data) {
@@ -119,8 +134,13 @@ const ChatLib = ({ server = "" }) => {
     const publicKey = await getPublicKey();
     const cid = rsaEncrypt(channel.id, publicKey);
 
-    return {t: encryptedMsg, c: cid};
-  };
+    return { t: encryptedMsg, c: cid };
+  }
+
+  function decryptSocketResponse(data) {
+    const decrypted = aesDecrypt(data, atob(channel.secret));
+    return JSON.parse(decrypted);
+  }
 
   return {
     login,
@@ -130,5 +150,6 @@ const ChatLib = ({ server = "" }) => {
     getPublicKey,
     getSocketMessage,
     loadLocalData,
+    decryptSocketResponse,
   };
 };
