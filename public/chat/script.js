@@ -6,8 +6,8 @@ function initSocketIO() {
   socket = io();
 
   socket.on("connect", () => {
-    const client = lib.getClient();
-    socket.emit("join", client.channel);
+    const channel = lib.getChannel();
+    socket.emit("join", channel.id);
     console.log("Connected to server");
   });
 
@@ -28,16 +28,16 @@ function showLoginScreen() {
   formEl.id = "loginform";
   formEl.innerHTML = `
 <div>
-  <label for="channel">Channel</label>
-  <input id="channel" class="input" placeholder="Enter Channel">
+  <label for="username">Username</label>
+  <input id="username" class="input" placeholder="Enter Username">
 </div>
 <div>
   <label for="password">Password</label>
   <input id="password" class="input" type="password" placeholder="Enter Password">
 </div>
 <div>
-  <label for="username">Username</label>
-  <input id="username" class="input" placeholder="Enter Username">
+  <label for="displayname">Display Name</label>
+  <input id="displayname" class="input" placeholder="Enter Display Name">
 </div>
 <input class="primary-btn" type="submit" value="Log In">
 `;
@@ -45,10 +45,10 @@ function showLoginScreen() {
   formEl.addEventListener("submit", async (ev) => {
     ev.preventDefault();
 
-    const isLoggedin = lib.login({
-      channel: document.getElementById("channel").value,
+    const isLoggedin = await lib.login({
       username: document.getElementById("username").value,
       password: document.getElementById("password").value,
+      displayname: document.getElementById("displayname").value,
     });
 
     if (isLoggedin) {
@@ -88,14 +88,14 @@ function showChatScreen() {
     }
 
     if (socket) {
-      const client = lib.getClient();
+      const channel = lib.getChannel();
       const data = JSON.stringify({
-        username: client.username,
+        username: channel.id,
         message: inputEl.value,
       });
 
       socket.emit("broadcast", await lib.getSocketMessage(data));
-      addMessage(client.username, inputEl.value);
+      addMessage(channel.id, inputEl.value);
       inputEl.value = "";
     }
   });
@@ -144,6 +144,7 @@ function addMessage(username, msg) {
 }
 
 function init() {
+  console.log(111, lib.isLoggedIn());
   if (lib.isLoggedIn()) {
     showChatScreen();
     initSocketIO();
