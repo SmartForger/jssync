@@ -5,7 +5,7 @@ import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
-import { generateRSAKeys } from "./cipher";
+import { generateRSAKeys, privateKeyPem } from "./cipher";
 
 //For env File
 dotenv.config();

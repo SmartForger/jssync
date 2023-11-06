@@ -3,3 +3,5 @@ _local/
 node_modules/
 dist/
 release/
+keygen
+keygen.exe
