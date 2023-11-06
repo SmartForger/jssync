@@ -15,8 +15,7 @@ function initSocketIO() {
     addSystemMessage(`Joined room: "${msg}"`);
   });
 
-  socket.on("receive", (msg) => {
-    const data = JSON.parse(msg);
+  socket.on("receive", async (data) => {
     addMessage(data.username, data.message);
   });
 }
@@ -90,10 +89,12 @@ function showChatScreen() {
 
     if (socket) {
       const client = lib.getClient();
-      socket.emit("broadcast", JSON.stringify({
+      const data = JSON.stringify({
         username: client.username,
         message: inputEl.value,
-      }));
+      });
+
+      socket.emit("broadcast", await lib.getSocketMessage(data));
       addMessage(client.username, inputEl.value);
       inputEl.value = "";
     }
@@ -112,7 +113,7 @@ function addSystemMessage(msg) {
   container.appendChild(msgEl);
 }
 
-const pad2 = (n) => n < 10 ? `0${n}` : n;
+const pad2 = (n) => (n < 10 ? `0${n}` : n);
 
 function addMessage(username, msg) {
   const container = document.getElementById("messages");
@@ -121,7 +122,9 @@ function addMessage(username, msg) {
   const h = now.getHours();
   let hh = h % 12;
   hh = hh === 0 ? 12 : hh;
-  const timeStr = `${pad2(hh)}:${pad2(now.getMinutes())} ${h >= 12 ? "pm" : "am"}`;
+  const timeStr = `${pad2(hh)}:${pad2(now.getMinutes())} ${
+    h >= 12 ? "pm" : "am"
+  }`;
 
   const msgEl = document.createElement("div");
   msgEl.className = "message";
@@ -132,7 +135,7 @@ function addMessage(username, msg) {
   </div>
   `;
 
-  const textEl = document.createElement('pre');
+  const textEl = document.createElement("pre");
   textEl.className = "text";
   textEl.innerHTML = msg;
   msgEl.appendChild(textEl);
