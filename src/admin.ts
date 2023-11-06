@@ -11,9 +11,12 @@ export function adminApiRoutes() {
     try {
       const token = req.headers.authorization;
       const nonce = req.headers['sync_nonce'];
-      const data = execSync(`./sync-keygen adminsecret ${token} ${nonce} ${btoa(privateKeyPem)}`);
-      console.log(111, `--${data}--`);
-      next();
+      const data = execSync(`./keygen check ${token} ${nonce} ${btoa(privateKeyPem)}`);
+      if (data.toString('utf8').trim() === 'true') {
+        next();
+      } else {
+        res.status(401).send({ error: 'unauthorized' });
+      }
     } catch {
       res.status(500).send({
         error: 'Server error'
