@@ -16,7 +16,8 @@ function initSocketIO() {
   });
 
   socket.on("receive", async (data) => {
-    addMessage(data.username, data.message);
+    const decrypted = lib.decryptSocketResponse(data);
+    addMessage(decrypted.username, decrypted.message);
   });
 }
 
