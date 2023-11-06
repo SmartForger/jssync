@@ -3,6 +3,7 @@ import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
+import { generateRSAKeys } from "./cipher";
 
 //For env File
 dotenv.config();
@@ -21,6 +22,8 @@ app.use(express.static("public"));
 const httpServer = createServer(app);
 setupSocketIO(httpServer);
 
-httpServer.listen(port, () => {
-  console.log(`Server is Fire at http://localhost:${port}`);
+generateRSAKeys(() => {
+  httpServer.listen(port, () => {
+    console.log(`Server is Fire at http://localhost:${port}`);
+  });  
 });
