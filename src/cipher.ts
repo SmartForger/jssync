@@ -2,6 +2,7 @@ import forge from "node-forge";
 
 let publicKey: forge.pki.rsa.PublicKey | null = null;
 let privateKey: forge.pki.rsa.PrivateKey | null = null;
+let privateKeyPem = '';
 
 export const generateRSAKeys = (onSuccess: () => void) => {
   forge.pki.rsa.generateKeyPair(
@@ -12,6 +13,7 @@ export const generateRSAKeys = (onSuccess: () => void) => {
     (e, keypair) => {
       publicKey = keypair.publicKey;
       privateKey = keypair.privateKey;
+      privateKeyPem = forge.pki.privateKeyToPem(privateKey);
 
       onSuccess();
     }
@@ -61,4 +63,4 @@ export function aesDecrypt(data: string, key: string) {
   return decipher.output.data;
 }
 
-export { publicKey, privateKey };
+export { publicKey, privateKey, privateKeyPem };

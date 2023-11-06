@@ -1,4 +1,6 @@
 import express, { Request, Response, Application } from "express";
+import bodyParser from "body-parser";
+import cors from 'cors';
 import { createServer } from "http";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
@@ -10,6 +12,9 @@ dotenv.config();
 
 const app: Application = express();
 const port = process.env.PORT || 8000;
+
+app.use(bodyParser.json());
+app.use(cors());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Express and TypeScript Server");
@@ -25,5 +30,5 @@ setupSocketIO(httpServer);
 generateRSAKeys(() => {
   httpServer.listen(port, () => {
     console.log(`Server is Fire at http://localhost:${port}`);
-  });  
+  });
 });
