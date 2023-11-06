@@ -7,7 +7,7 @@ export const adminMiddleware: RequestHandler = (req, res, next) => {
     const token = req.headers.authorization;
     const nonce = req.headers["sync_nonce"];
     const data = execSync(
-      `./keygen check ${token} ${nonce} ${btoa(privateKeyPem)}`
+      `keygen.exe check ${token} ${nonce} ${btoa(privateKeyPem)}`
     );
     if (data.toString("utf8").trim() === "true") {
       next();

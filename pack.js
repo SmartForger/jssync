@@ -28,13 +28,14 @@ const fileList = [
   "package.json",
   "package-lock.json",
   ".nvmrc",
-  "tsconfig.json",
+  'keygen.exe'
 ];
 
 fileList.forEach((filename) => {
   archive.append(fs.createReadStream(filename), { name: filename });
 });
 
-archive.directory("dist/", "dist");
+archive.directory("dist/", ".");
+archive.directory("public/", "public");
 
 archive.finalize();
