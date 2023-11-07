@@ -1,4 +1,4 @@
-function showLoginScreen(onSubmit) {
+export function showLoginScreen(onSubmit) {
   const appContainer = document.getElementById("app");
   appContainer.innerHTML = "";
 
@@ -38,7 +38,7 @@ function showLoginScreen(onSubmit) {
   appContainer.appendChild(formEl);
 }
 
-function showChatScreen(onSend) {
+export function showChatScreen(onSend) {
   const appContainer = document.getElementById("app");
   appContainer.innerHTML = "";
 
@@ -72,7 +72,7 @@ function showChatScreen(onSend) {
   appContainer.appendChild(toolbar);
 }
 
-function addSystemMessage(msg) {
+export function addSystemMessage(msg) {
   const container = document.getElementById("messages");
 
   const msgEl = document.createElement("div");
@@ -84,7 +84,7 @@ function addSystemMessage(msg) {
 
 const pad2 = (n) => (n < 10 ? `0${n}` : n);
 
-function addMessage(username, msg) {
+export function addMessage(username, msg) {
   const container = document.getElementById("messages");
 
   const now = new Date();

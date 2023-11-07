@@ -4,7 +4,7 @@
  * @param {string} publicKey PEM format public key
  * @returns {string}
  */
-function rsaEncrypt(data, publicKey) {
+export function rsaEncrypt(data, publicKey) {
   const rsapub = forge.pki.publicKeyFromPem(publicKey);
   const encryptedText = rsapub.encrypt(
     forge.util.encodeUtf8(data),
@@ -23,7 +23,7 @@ function rsaEncrypt(data, publicKey) {
  * @param {byte[]} key 32 byte array aes key
  * @returns Base64 string
  */
-function aesEncrypt(data, key) {
+export function aesEncrypt(data, key) {
   const iv = forge.random.getBytesSync(32);
   const cipher = forge.cipher.createCipher("AES-GCM", key);
   cipher.start({ iv: iv });
@@ -39,7 +39,7 @@ function aesEncrypt(data, key) {
  * @param {byte[]} key 32 byte array aes key
  * @returns
  */
-function aesDecrypt(data, key) {
+export function aesDecrypt(data, key) {
   const encrypted = atob(data);
 
   const iv = encrypted.slice(0, 32);

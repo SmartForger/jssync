@@ -1,4 +1,6 @@
-const ChatLib = ({ server = "" }) => {
+import { rsaEncrypt, aesDecrypt, aesEncrypt } from "./cipher";
+
+export const ChatLib = ({ server = "" }) => {
   const STORAGE_KEY_AUTH = "auth";
   const STORAGE_KEY_DISPLAYNAME = "displayname";
 
@@ -35,7 +37,11 @@ const ChatLib = ({ server = "" }) => {
 
   async function login(data) {
     try {
-      const { data: ch, nonce, responseData } = await apiRequest(`${server}/api/login`, {
+      const {
+        data: ch,
+        nonce,
+        responseData,
+      } = await apiRequest(`${server}/api/login`, {
         username: data.username,
         password: data.password,
       });
@@ -87,9 +93,12 @@ const ChatLib = ({ server = "" }) => {
         const d = aesDecrypt(authInfo.d, nonce);
         channel = JSON.parse(d);
 
-        const { data: response } = await apiRequest(`${server}/api/haschannel`, {
-          cid: channel.id,
-        });
+        const { data: response } = await apiRequest(
+          `${server}/api/haschannel`,
+          {
+            cid: channel.id,
+          }
+        );
         if (!response.haschannel) {
           channel = {};
         }
@@ -153,3 +162,5 @@ const ChatLib = ({ server = "" }) => {
     decryptSocketResponse,
   };
 };
+
+export const chatlib = ChatLib(chatlibConfig);
