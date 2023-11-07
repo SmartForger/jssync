@@ -5,3 +5,5 @@ dist/
 release/
 keygen
 keygen.exe
+public/chat/scripts/
+public/chat/config.js
