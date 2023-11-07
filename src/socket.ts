@@ -18,15 +18,12 @@ export function setupSocketIO(server: HttpServer) {
 
     socket.on("broadcast", (data) => {
       try {
-        const decrypted = decryptSocketMessage(data);
-        if (!decrypted.cid) {
+        const cid = getChannelId(data);
+        if (!cid) {
           return;
         }
 
-        const message = JSON.parse(decrypted.data);
-        socket.broadcast
-          .to(decrypted.cid)
-          .emit("receive", encryptSocketResponse(decrypted.cid, message));
+        socket.broadcast.to(cid).emit("receive", data.t);
       } catch (e) {
         console.log(e);
       }
@@ -34,26 +31,11 @@ export function setupSocketIO(server: HttpServer) {
   });
 }
 
-function decryptSocketMessage(data: { t: string; c: string }) {
+function getChannelId(data: { t: string; c: string }) {
   const cid = decryptRSA(data.c);
   const channel = getChannelById(cid || "");
-  if (!channel) {
-    return { data: "", cid: "" };
-  }
 
-  return {
-    data: aesDecrypt(data.t, channel.secret),
-    cid,
-  };
-}
-
-function encryptSocketResponse(cid: string, data: string) {
-  const channel = getChannelById(cid);
-  if (!channel) {
-    return "";
-  }
-
-  return aesEncrypt(JSON.stringify(data), channel.secret);
+  return channel?.id || "";
 }
 
 export function getSocketIO() {
