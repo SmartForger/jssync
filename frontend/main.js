@@ -52,10 +52,10 @@ async function init() {
   await chatlib.loadLocalData();
 
   if (chatlib.isLoggedIn()) {
-    showChatScreen(loginHandler);
+    showChatScreen(sendMessage);
     initSocketIO();
   } else {
-    showLoginScreen(sendMessage);
+    showLoginScreen(loginHandler);
   }
 }
 
