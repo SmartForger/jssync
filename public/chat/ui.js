@@ -1,67 +1,44 @@
-const lib = ChatLib({});
-
-let socket = null;
-
-function initSocketIO() {
-  socket = io();
-
-  socket.on("connect", () => {
-    const channel = lib.getChannel();
-    socket.emit("join", channel.id);
-    console.log("Connected to server");
-  });
-
-  socket.on("joined", (msg) => {
-    addSystemMessage(`Joined room: "${msg}"`);
-  });
-
-  socket.on("receive", async (data) => {
-    const decrypted = lib.decryptSocketResponse(data);
-    addMessage(decrypted.username, decrypted.message);
-  });
-}
-
-function showLoginScreen() {
+function showLoginScreen(onSubmit) {
   const appContainer = document.getElementById("app");
   appContainer.innerHTML = "";
 
   const formEl = document.createElement("form");
   formEl.id = "loginform";
   formEl.innerHTML = `
-<div>
-  <label for="username">Username</label>
-  <input id="username" class="input" placeholder="Enter Username">
-</div>
-<div>
-  <label for="password">Password</label>
-  <input id="password" class="input" type="password" placeholder="Enter Password">
-</div>
-<div>
-  <label for="displayname">Display Name</label>
-  <input id="displayname" class="input" placeholder="Enter Display Name">
-</div>
-<input class="primary-btn" type="submit" value="Log In">
-`;
+  <div>
+    <label for="username">Username</label>
+    <input id="username" class="input" placeholder="Enter Username">
+  </div>
+  <div>
+    <label for="password">Password</label>
+    <input id="password" class="input" type="password" placeholder="Enter Password">
+  </div>
+  <div>
+    <label for="displayname">Display Name</label>
+    <input id="displayname" class="input" placeholder="Enter Display Name">
+  </div>
+  <input class="primary-btn" type="submit" value="Log In">
+  `;
 
-  formEl.addEventListener("submit", async (ev) => {
+  formEl.addEventListener("submit", (ev) => {
     ev.preventDefault();
 
-    const isLoggedin = await lib.login({
-      username: document.getElementById("username").value,
-      password: document.getElementById("password").value,
-      displayname: document.getElementById("displayname").value,
-    });
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const displayname = document.getElementById("displayname").value;
 
-    if (isLoggedin) {
-      showChatScreen();
-      initSocketIO();
+    if (!username || !password || !displayname) {
+      alert("Please fill in the form");
+      return;
     }
+
+    onSubmit({ username, password, displayname });
   });
 
   appContainer.appendChild(formEl);
 }
 
-function showChatScreen() {
+function showChatScreen(onSend) {
   const appContainer = document.getElementById("app");
   appContainer.innerHTML = "";
 
@@ -88,16 +65,8 @@ function showChatScreen() {
       return;
     }
 
-    if (socket) {
-      const data = JSON.stringify({
-        username: lib.getDisplayName(),
-        message: inputEl.value,
-      });
-
-      socket.emit("broadcast", await lib.getSocketMessage(data));
-      addMessage(lib.getDisplayName(), inputEl.value);
-      inputEl.value = "";
-    }
+    await onSend(inputEl.value);
+    inputEl.value = "";
   });
 
   appContainer.appendChild(toolbar);
@@ -142,16 +111,3 @@ function addMessage(username, msg) {
 
   container.appendChild(msgEl);
 }
-
-async function init() {
-  await lib.loadLocalData();
-
-  if (lib.isLoggedIn()) {
-    showChatScreen();
-    initSocketIO();
-  } else {
-    showLoginScreen();
-  }
-}
-
-init();
