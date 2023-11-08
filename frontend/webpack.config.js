@@ -10,6 +10,7 @@ module.exports = {
     path: path.resolve(__dirname, "../public/chat/scripts"),
   },
   mode: "production",
+  devtool: 'inline-source-map',
   plugins: [new CleanWebpackPlugin()],
   module: {
     rules: [

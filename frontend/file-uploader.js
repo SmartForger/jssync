@@ -87,3 +87,5 @@ export const FileUploader = () => {
     receiveChunk,
   };
 };
+
+export const fileUploader = FileUploader();
