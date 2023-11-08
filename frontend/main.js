@@ -8,6 +8,7 @@ import {
   uiStartSendingFile,
   uiFileReceived,
   uiUploadProgress,
+  uiStartReceivingFile,
 } from "./ui";
 import { FileUploader } from './file-uploader';
 
@@ -35,14 +36,12 @@ function initSocketIO() {
   socket.on('freceive', async (data) => {
     const fileInfo = chatlib.decryptSocketResponse(data);
 
-    const f = uploader.getFileInfo(fileInfo.fileId);
-    if (!f) {
-      return;
-    }
-    
     if (fileInfo.complete) {
-      const b = new Blob(f.data, { type: "octet/stream" });
-      uiFileReceived(f.name, b);
+      const f = uploader.getFileInfo(fileInfo.fileId);
+      if (f) {
+        const b = new Blob(f.data, { type: "octet/stream" });
+        uiFileReceived(f.name, b);
+      }
     } else {
       if (fileInfo.chunkIndex === 0) {
         uploader.startReceiving(fileInfo.fileId, fileInfo.filename, fileInfo.totalSize);
