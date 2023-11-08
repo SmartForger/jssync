@@ -37,7 +37,7 @@ export const FileUploader = () => {
 
   const getUploadProgress = (fileId) => {
     const fileInfo = files.get(fileId);
-    if (fileInfo.totalSize) {
+    if (fileInfo && fileInfo.totalSize) {
       const p = (fileInfo.chunkIndex * CHUNK_SIZE * 100) / fileInfo.totalSize;
       return Math.min(p, 100);
     }
