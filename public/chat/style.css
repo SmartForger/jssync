@@ -112,3 +112,21 @@ html, body {
 .primary-btn:active {
     background-color: #546E7A;
 }
+
+.primary-btn:disabled {
+    opacity: 0.6;;
+}
+
+.file-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    max-width: 0;
+    max-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+.file-viewer {
+    padding: 16px 20px 0;
+}

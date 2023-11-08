@@ -28,6 +28,31 @@ export function setupSocketIO(server: HttpServer) {
         console.log(e);
       }
     });
+
+    socket.on("fbroadcast", (data) => {
+      try {
+        const cid = getChannelId(data);
+        if (!cid) {
+          return;
+        }
+
+        socket.broadcast.to(cid).emit("freceive", data.t);
+
+        const decrypted = decryptSocketMessage(data);
+        if (decrypted.cid && decrypted.data) {
+          const msg = JSON.parse(decrypted.data);
+
+          const resData = JSON.stringify({
+            fileId: msg.fileId,
+            chunkIndex: msg.chunkIndex,
+            complete: msg.complete,
+          });
+          socket.emit("f_ack", encryptSocketResponse(decrypted.cid, resData));
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
   });
 }
 
@@ -36,6 +61,28 @@ function getChannelId(data: { t: string; c: string }) {
   const channel = getChannelById(cid || "");
 
   return channel?.id || "";
+}
+
+function decryptSocketMessage(data: { t: string; c: string }) {
+  const cid = decryptRSA(data.c);
+  const channel = getChannelById(cid || "");
+  if (!channel) {
+    return { data: "", cid: "" };
+  }
+
+  return {
+    data: aesDecrypt(data.t, channel.secret),
+    cid,
+  };
+}
+
+function encryptSocketResponse(cid: string, data: string) {
+  const channel = getChannelById(cid);
+  if (!channel) {
+    return "";
+  }
+
+  return aesEncrypt(JSON.stringify(data), channel.secret);
 }
 
 export function getSocketIO() {
