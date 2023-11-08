@@ -1,3 +1,5 @@
+let selectedFile = null;
+
 export function showLoginScreen(onSubmit) {
   const appContainer = document.getElementById("app");
   appContainer.innerHTML = "";
@@ -46,6 +48,10 @@ export function showChatScreen(onSend) {
   messages.id = "messages";
   appContainer.appendChild(messages);
 
+  const fileViewer = document.createElement('div');
+  fileViewer.className = 'file-viewer';
+  appContainer.appendChild(fileViewer);
+
   const toolbar = document.createElement("div");
   toolbar.id = "toolbar";
 
@@ -61,15 +67,107 @@ export function showChatScreen(onSend) {
   toolbar.appendChild(sendBtn);
 
   sendBtn.addEventListener("click", async () => {
-    if (!inputEl.value) {
+    if (!inputEl.value && !selectedFile) {
       return;
     }
 
-    await onSend(inputEl.value);
+    await onSend({
+      text: inputEl.value,
+      file: selectedFile,
+    });
+
     inputEl.value = "";
   });
 
   appContainer.appendChild(toolbar);
+
+
+  const fileContainer = document.createElement('div');
+
+  const fileInput = document.createElement('input');
+  fileInput.type = "file";
+  fileInput.className = "file-input";
+  fileContainer.appendChild(fileInput);
+  fileInput.onchange = (ev) => {
+    selectFile(ev.target.files[0]);
+  };
+
+  const selectFileBtn = document.createElement("button");
+  selectFileBtn.id = 'selectFileBtn';
+  selectFileBtn.className = "primary-btn";
+  selectFileBtn.innerText = "Select File";
+  fileContainer.appendChild(selectFileBtn);
+
+  selectFileBtn.addEventListener("click", () => {
+    fileInput.value = null;
+    fileInput.click();
+  });
+
+  toolbar.appendChild(fileContainer);
+}
+
+export function selectFile(file) {
+  selectedFile = file;
+
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.innerText = `File selected: ${selectedFile.name}`;
+  }
+}
+
+export function uiStartSendingFile() {
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.innerHTML = `<span>Sending file: ${selectedFile.name} </span><span id="upload_progress">(0.00%)</span>`;
+  }
+
+  const sendBtn = document.getElementById('send');
+  sendBtn.disabled = true;
+  sendBtn.innerText = 'Sending File';
+
+  const selectFileBtn = document.getElementById('selectFileBtn');
+  selectFileBtn.disabled = true;
+}
+
+export function uiUploadProgress(percent) {
+  const progressEl = document.getElementById('upload_progress');
+  if (progressEl) {
+    progressEl.innerText = `(${percent.toFixed(2)}%)`;
+  }
+}
+
+export function uiFinishSendingFile(filename) {
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.innerText = `File sent: ${filename}`;
+  }
+
+  const sendBtn = document.getElementById('send');
+  sendBtn.disabled = false;
+  sendBtn.innerText = 'Send';
+
+  const selectFileBtn = document.getElementById('selectFileBtn');
+  selectFileBtn.disabled = false;
+}
+
+export function uiStartReceivingFile(filename) {
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.innerHTML = `<span>Receiving file: ${filename}</span><span id="upload_progress">(0.00%)</span>`;
+  }
+}
+
+export function uiFileReceived(filename, blob) {
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.innerHTML = '<span>File received: </span>';
+
+    const link = document.createElement('a');
+    link.innerText = filename;
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    fileView.appendChild(link);
+  }
 }
 
 export function addSystemMessage(msg) {
