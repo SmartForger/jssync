@@ -4,16 +4,15 @@ import {
   addSystemMessage,
   showChatScreen,
   showLoginScreen,
-  uiFinishSendingFile,
   uiStartSendingFile,
-  uiFileReceived,
-  uiUploadProgress,
+  uiFinishSendingFile,
+  uiSetFileProgress,
   uiStartReceivingFile,
+  uiFileReceived,
 } from "./ui";
-import { FileUploader } from './file-uploader';
+import { fileUploader } from './file-uploader';
 
 let socket = null;
-const uploader = FileUploader();
 
 function initSocketIO() {
   socket = io();
@@ -36,39 +35,42 @@ function initSocketIO() {
   socket.on('freceive', async (data) => {
     const fileInfo = chatlib.decryptSocketResponse(data);
 
+    console.log('freceive', fileInfo.fileId, fileInfo.chunkIndex);
+
     if (fileInfo.complete) {
-      const f = uploader.getFileInfo(fileInfo.fileId);
+      const f = fileUploader.getFileInfo(fileInfo.fileId);
       if (f) {
         const b = new Blob(f.data, { type: "octet/stream" });
-        uiFileReceived(f.name, b);
+        uiFileReceived(f.id, f.name, b);
       }
     } else {
       if (fileInfo.chunkIndex === 0) {
-        uploader.startReceiving(fileInfo.fileId, fileInfo.filename, fileInfo.totalSize);
-        uiStartReceivingFile(fileInfo.filename);
+        fileUploader.startReceiving(fileInfo.fileId, fileInfo.filename, fileInfo.totalSize);
+        uiStartReceivingFile(fileInfo.fileId, fileInfo.filename);
       } else {
-        uiUploadProgress(uploader.getUploadProgress(fileInfo.fileId));
+        uiSetFileProgress(fileId, fileUploader.getUploadProgress(fileInfo.fileId));
       }
 
-      uploader.receiveChunk(fileInfo.fileId, fileInfo.chunkIndex, decodeURI(fileInfo.chunk));
+      fileUploader.receiveChunk(fileInfo.fileId, fileInfo.chunkIndex, decodeURI(fileInfo.chunk));
     } 
   });
 
   socket.on("f_ack", async (data) => {
     const decrypted = chatlib.decryptSocketResponse(data);
     const fileInfo = JSON.parse(decrypted);
-    const f = uploader.getFileInfo(fileInfo.fileId);
+    const f = fileUploader.getFileInfo(fileInfo.fileId);
     if (!f) {
       return;
     }
 
+    console.log('f_ack', fileInfo);
     if (!fileInfo.complete) {
-      uploader.setChunkIndex(fileInfo.fileId, fileInfo.chunkIndex + 1);
-      uiUploadProgress(uploader.getUploadProgress(fileInfo.fileId));
+      fileUploader.setChunkIndex(fileInfo.fileId, fileInfo.chunkIndex + 1);
+      uiSetFileProgress(fileInfo.fileId, fileUploader.getUploadProgress(fileInfo.fileId));
       sendChunk(fileInfo.fileId);
     } else {
-      uiFinishSendingFile(f.name);
-      uploader.removeFile(fileInfo.fileId);
+      uiFinishSendingFile(f.id, f.name);
+      fileUploader.removeFile(fileInfo.fileId);
     }
   });
 }
@@ -94,24 +96,25 @@ async function sendMessage(data) {
       addMessage(chatlib.getDisplayName(), data.text);
     }
 
-    if (data.file) {
-      uiStartSendingFile();
-
-      console.log(222, data.file);
-      const fileId = uploader.startUploadingFile(data.file);
-      sendChunk(fileId);
+    if (data.fileId) {
+      const f = fileUploader.getFileInfo(data.fileId);
+      if (f) {
+        console.log(222, f);
+        uiStartSendingFile(f.id, f.name);
+        sendChunk(f.id);
+      }
     }
   }
 }
 
 async function sendChunk(fileId) {
   try {
-    const fileInfo = uploader.getFileInfo(fileId);
+    const fileInfo = fileUploader.getFileInfo(fileId);
     if (!fileInfo) {
       throw new Error('file not found');
     }
 
-    const chunk = uploader.getChunk(fileId);
+    const chunk = fileUploader.getChunk(fileId);
     let uploadedData = {};
     if (chunk.size) {
       const blobData = await chunk.text();

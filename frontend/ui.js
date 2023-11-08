@@ -1,4 +1,6 @@
-let selectedFile = null;
+import { fileUploader } from "./file-uploader";
+
+let selectedFileId = '';
 
 export function showLoginScreen(onSubmit) {
   const appContainer = document.getElementById("app");
@@ -67,13 +69,13 @@ export function showChatScreen(onSend) {
   toolbar.appendChild(sendBtn);
 
   sendBtn.addEventListener("click", async () => {
-    if (!inputEl.value && !selectedFile) {
+    if (!inputEl.value && !selectedFileId) {
       return;
     }
 
     await onSend({
       text: inputEl.value,
-      file: selectedFile,
+      fileId: selectedFileId,
     });
 
     inputEl.value = "";
@@ -107,19 +109,17 @@ export function showChatScreen(onSend) {
 }
 
 export function selectFile(file) {
-  selectedFile = file;
+  selectedFileId = fileUploader.startUploadingFile(file);
 
-  const fileView = document.querySelector('.file-viewer');
-  if (fileView) {
-    fileView.innerText = `File selected: ${selectedFile.name}`;
-  }
+  uiAddFile(selectedFileId);
+  uiSetFileStatusText(selectedFileId, `File selected: ${file.name}`);
+  uiHideFileProgress(selectedFileId);
 }
 
-export function uiStartSendingFile() {
-  const fileView = document.querySelector('.file-viewer');
-  if (fileView) {
-    fileView.innerHTML = `<span>Sending file: ${selectedFile.name} </span><span id="upload_progress">(0.00%)</span>`;
-  }
+export function uiStartSendingFile(fileId, filename) {
+  uiSetFileStatusText(fileId, `Sending file: ${filename} `);
+  uiShowFileProgress(fileId);
+  uiSetFileProgress(fileId, 0);
 
   const sendBtn = document.getElementById('send');
   sendBtn.disabled = true;
@@ -129,18 +129,9 @@ export function uiStartSendingFile() {
   selectFileBtn.disabled = true;
 }
 
-export function uiUploadProgress(percent) {
-  const progressEl = document.getElementById('upload_progress');
-  if (progressEl) {
-    progressEl.innerText = `(${percent.toFixed(2)}%)`;
-  }
-}
-
-export function uiFinishSendingFile(filename) {
-  const fileView = document.querySelector('.file-viewer');
-  if (fileView) {
-    fileView.innerText = `File sent: ${filename}`;
-  }
+export function uiFinishSendingFile(fileId, filename) {
+  uiSetFileStatusText(fileId, `File sent: ${filename}`);
+  uiSetFileProgress(fileId, 100);
 
   const sendBtn = document.getElementById('send');
   sendBtn.disabled = false;
@@ -150,23 +141,27 @@ export function uiFinishSendingFile(filename) {
   selectFileBtn.disabled = false;
 }
 
-export function uiStartReceivingFile(filename) {
-  const fileView = document.querySelector('.file-viewer');
-  if (fileView) {
-    fileView.innerHTML = `<span>Receiving file: ${filename}</span><span id="upload_progress">(0.00%)</span>`;
-  }
+export function uiStartReceivingFile(fileId, filename) {
+  uiRemoveFile(fileId);
+  uiAddFile(fileId);
+  uiSetFileStatusText(fileId, `Receiving file: ${filename} `);
+  uiSetFileProgress(fileId, 0);
 }
 
-export function uiFileReceived(filename, blob) {
-  const fileView = document.querySelector('.file-viewer');
-  if (fileView) {
-    fileView.innerHTML = '<span>File received: </span>';
+export function uiFileReceived(fileId, filename, blob) {
+  uiSetFileStatusText(fileId, `File received: `);
+  uiHideFileProgress(fileId);
+  uiSetFileDownloadLink(fileId, filename, blob);
+
+  const fileEl = document.querySelector(`#f_${fileId}`);
+  if (fileEl) {
+    fileEl.innerHTML = '<span>File received: </span>';
 
     const link = document.createElement('a');
     link.innerText = filename;
     link.href = window.URL.createObjectURL(blob);
     link.download = filename;
-    fileView.appendChild(link);
+    fileEl.appendChild(link);
   }
 }
 
@@ -208,4 +203,82 @@ export function addMessage(username, msg) {
   msgEl.appendChild(textEl);
 
   container.appendChild(msgEl);
+}
+
+export function uiAddFile(fileId) {
+  const fileEl = document.createElement('div');
+  fileEl.className = 'file';
+  fileEl.id = `f_${fileId}`;
+
+  const textEl = document.createElement('span');
+  textEl.className = 'status';
+
+  const downloadLink = document.createElement('a');
+  downloadLink.innerText = '';
+  downloadLink.className = 'download';
+  downloadLink.style.display = 'none';
+
+  const progressEl = document.createElement('span');
+  progressEl.className = 'progress';
+
+  const removeBtnEl = document.createElement('a');
+  removeBtnEl.href = '#';
+  removeBtnEl.innerText = 'X';
+  removeBtnEl.className = 'remove-btn'
+  removeBtnEl.addEventListener('click', () => {
+    uiRemoveFile(fileId);
+    fileUploader.removeFile(fileId);
+  });
+
+  fileEl.appendChild(textEl);
+  fileEl.appendChild(progressEl);
+  fileEl.appendChild(downloadLink);
+  fileEl.appendChild(removeBtnEl);
+
+  const fileView = document.querySelector('.file-viewer');
+  if (fileView) {
+    fileView.appendChild(fileEl);
+  }
+}
+
+export function uiSetFileStatusText(fileId, msg) {
+  const el = document.querySelector(`#f_${fileId} .status`);
+  if (el) {
+    el.innerText = msg;
+  }
+}
+
+export function uiSetFileProgress(fileId, progress) {
+  const el = document.querySelector(`#f_${fileId} .progress`);
+  if (el) {
+    el.innerText = `(${progress.toFixed(2)}%)`;
+  }
+}
+
+export function uiHideFileProgress(fileId) {
+  const el = document.querySelector(`#f_${fileId} .progress`);
+  if (el) {
+    el.style.display = 'none';
+  }
+}
+
+export function uiShowFileProgress(fileId, progress) {
+  const el = document.querySelector(`#f_${fileId} .progress`);
+  if (el) {
+    el.style.display = 'inline-block';
+  }
+}
+
+export function uiSetFileDownloadLink(fileId, filename, blob) {
+  const el = document.querySelector(`#f_${fileId} .download`);
+  if (el) {
+    el.href = window.URL.createObjectURL(blob);
+    el.download = filename;
+    el.style.display = 'inline-block';
+  }
+}
+
+export function uiRemoveFile(fileId) {
+  const el = document.querySelector(`#f_${fileId}`);
+  el?.remove();
 }
