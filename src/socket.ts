@@ -51,7 +51,7 @@ export function setupSocketIO(server: HttpServer) {
 
             if (data === 'end') {
               socket.off(`f_${fileInfo.id}`, handleUpload);
-              socket.emit(`f_${fileInfo.id}_ack`, encryptSocketResponse(cid, -1));
+              socket.emit(`f_${fileInfo.id}_ack`, encryptSocketResponse(cid, '-1'));
             } else {
               const index = uploadManager.addFileData(fileInfo.id, data);
               socket.emit(`f_${fileInfo.id}_ack`, encryptSocketResponse(cid, index.toString()));
