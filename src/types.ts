@@ -8,3 +8,10 @@ export type User = {
   username: string;
   password: string;
 };
+
+export type FileInfo = {
+  id: string;
+  name: string;
+  totalSize: number;
+  data?: any[];
+};
