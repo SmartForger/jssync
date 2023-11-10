@@ -35,24 +35,19 @@ function initSocketIO() {
   socket.on('freceive', async (data) => {
     const fileInfo = chatlib.decryptSocketResponse(data);
 
-    console.log('freceive', fileInfo.fileId, fileInfo.chunkIndex);
+    console.log('freceive', fileInfo);
 
-    if (fileInfo.complete) {
-      const f = fileUploader.getFileInfo(fileInfo.fileId);
-      if (f) {
-        const b = new Blob(f.data, { type: "octet/stream" });
-        uiFileReceived(f.id, f.name, b);
-      }
-    } else {
-      if (fileInfo.chunkIndex === 0) {
-        fileUploader.startReceiving(fileInfo.fileId, fileInfo.filename, fileInfo.totalSize);
-        uiStartReceivingFile(fileInfo.fileId, fileInfo.filename);
-      } else {
-        uiSetFileProgress(fileId, fileUploader.getUploadProgress(fileInfo.fileId));
-      }
+    fileUploader.startReceiving(fileInfo.id, fileInfo.name, fileInfo.totalSize);
+    uiStartReceivingFile(fileInfo.id, fileInfo.name);
 
-      fileUploader.receiveChunk(fileInfo.fileId, fileInfo.chunkIndex, decodeURI(fileInfo.chunk));
-    } 
+    const fileResponseHandler = (data) => {
+      const decrypted = chatlib.decryptFileData(data);
+      fileUploader.receiveChunk(fileInfo.id, decrypted);
+      sendFileReceiveRequest(fileInfo.id, hasMore);
+    }
+    socket.on(`f_res_${fileInfo.id}`, fileResponseHandler);
+
+    sendFileReceiveRequest(fileInfo.id);
   });
 
   socket.on("f_ack", async (data) => {
@@ -125,30 +120,6 @@ async function sendFileInfo(fileId) {
 
   const sm = await chatlib.getSocketMessage(JSON.stringify(uploadedData));
   socket.emit('fbroadcast', sm);
-  /*
-  let chunk = fileUploader.getChunk(fileId);
-
-  let i = 0;
-  let result = [];
-  while (chunk.size) {
-    const d = await chunk.arrayBuffer();
-    const dd = chatlib.encryptFileData(d);
-    result.push(dd);
-
-    fileUploader.setChunkIndex(fileId, ++i);
-    chunk= fileUploader.getChunk(fileId);
-  }
-
-  console.log(111);
-  const b = new Blob(result);
-  const link = document.createElement('a');
-  link.href = window.URL.createObjectURL(b);
-
-  const f = fileUploader.getFileInfo(fileId);
-  link.download = f.name;
-
-  document.body.appendChild(link);
-  link.click();*/
 }
 
 async function sendChunk(fileId) {
@@ -170,6 +141,14 @@ async function sendChunk(fileId) {
     socket.emit(`f_${fileInfo.id}`, uploadData);
   } catch (e) {
     console.error(e);
+  }
+}
+
+async function sendFileReceiveRequest(fileId) {
+  const fileInfo = fileUploader.getFileInfo(fileId);
+  if (fileInfo) {
+    const encrypted = await chatlib.getSocketMessage(fileInfo.chunkIndex.toString());
+    socket.emit(`f_req_${fileInfo.id}`, encrypted);
   }
 }
 

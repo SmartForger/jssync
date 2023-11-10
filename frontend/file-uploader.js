@@ -64,15 +64,23 @@ export const FileUploader = () => {
       id: fileId,
       chunkIndex: 0,
       totalSize,
+      receivedSize: 0,
       data: [],
     });
   }
 
-  const receiveChunk = (fileId, chunkIndex, data) => {
+  const receiveChunk = (fileId, data) => {
     const fileInfo = files.get(fileId);
     if (fileInfo) {
-      fileInfo.chunkIndex = chunkIndex;
-      fileInfo.data[chunkIndex] = data;
+      fileInfo.data.push(data);
+      fileInfo.receivedSize += data.length;
+      console.log(333, 'received', fileInfo.receivedSize);
+
+      if (fileInfo.totalSize > fileInfo.receivedSize) {
+        fileInfo.chunkIndex++;
+      } else {
+        fileInfo.chunkIndex = -1;
+      }
     }
   }
 

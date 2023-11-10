@@ -59,6 +59,19 @@ export function setupSocketIO(server: HttpServer) {
           }
           socket.on(`f_${fileInfo.id}`, handleUpload);
 
+          const fileReqHandler = (data: any) => {
+            const decrypted = decryptSocketMessage(data);
+            const index = +decrypted.data;
+
+            if (index < 0) {
+              socket.off(`f_req_${fileInfo.id}`, fileReqHandler);
+            } else {
+              const d = uploadManager.getFileData(fileInfo.id, index);
+              socket.emit(`f_res_${fileInfo.id}`, d);
+            }
+          }
+          socket.on(`f_req_${fileInfo.id}`, fileReqHandler);
+
           socket.emit("f_ack", data.t);
         }
 
