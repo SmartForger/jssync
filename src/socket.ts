@@ -33,13 +33,9 @@ export function setupSocketIO(server: HttpServer) {
 
     socket.on("fbroadcast", (data) => {
       try {
-        const cid = getChannelId(data);
-        if (!cid) {
-          return;
-        }
-
         const decrypted = decryptSocketMessage(data);
         if (decrypted.cid && decrypted.data) {
+          const cid = decrypted.cid;
           const fileInfo = JSON.parse(decrypted.data) as FileInfo;
 
           uploadManager.addFile(fileInfo);
@@ -59,10 +55,24 @@ export function setupSocketIO(server: HttpServer) {
           }
           socket.on(`f_${fileInfo.id}`, handleUpload);
 
+          socket.emit("f_ack", data.t);
+          socket.broadcast.to(cid).emit("freceive", data.t);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    socket.on("f_request", (data) => {
+      try {
+        const decrypted = decryptSocketMessage(data);
+        if (decrypted.data) {
+          const fileInfo = JSON.parse(decrypted.data) as FileInfo;
+
           const fileReqHandler = (data: any) => {
             const decrypted = decryptSocketMessage(data);
             const index = +decrypted.data;
-
+    
             if (index < 0) {
               socket.off(`f_req_${fileInfo.id}`, fileReqHandler);
             } else {
@@ -72,10 +82,8 @@ export function setupSocketIO(server: HttpServer) {
           }
           socket.on(`f_req_${fileInfo.id}`, fileReqHandler);
 
-          socket.emit("f_ack", data.t);
+          socket.emit("f_response", data.t);
         }
-
-        socket.broadcast.to(cid).emit("freceive", data.t);
       } catch (e) {
         console.log(e);
       }

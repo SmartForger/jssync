@@ -165,7 +165,7 @@ export const ChatLib = ({ server = "" }) => {
   }
 
   function decryptFileData(data) {
-    const decrypted = aesDecrypt(encrypted, atob(channel.secret));
+    const decrypted = aesDecrypt(data, atob(channel.secret));
     return Uint8Array.from(decrypted, (c) => c.charCodeAt(0));
   }
 
