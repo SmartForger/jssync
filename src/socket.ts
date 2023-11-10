@@ -2,6 +2,8 @@ import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import { aesDecrypt, aesEncrypt, decryptRSA } from "./cipher";
 import { getChannelById } from "./channel";
+import { uploadManager } from "./upload-manager";
+import { FileInfo } from "./types";
 
 let io: Server;
 
@@ -36,19 +38,31 @@ export function setupSocketIO(server: HttpServer) {
           return;
         }
 
-        socket.broadcast.to(cid).emit("freceive", data.t);
-
         const decrypted = decryptSocketMessage(data);
         if (decrypted.cid && decrypted.data) {
-          const msg = JSON.parse(decrypted.data);
+          const fileInfo = JSON.parse(decrypted.data) as FileInfo;
 
-          const resData = JSON.stringify({
-            fileId: msg.fileId,
-            chunkIndex: msg.chunkIndex,
-            complete: msg.complete,
-          });
-          socket.emit("f_ack", encryptSocketResponse(decrypted.cid, resData));
+          uploadManager.addFile(fileInfo);
+
+          const handleUpload = (data: any) => {
+            if (!data) {
+              return;
+            }
+
+            if (data === 'end') {
+              socket.off(`f_${fileInfo.id}`, handleUpload);
+              socket.emit(`f_${fileInfo.id}_ack`, encryptSocketResponse(cid, -1));
+            } else {
+              const index = uploadManager.addFileData(fileInfo.id, data);
+              socket.emit(`f_${fileInfo.id}_ack`, encryptSocketResponse(cid, index.toString()));
+            }
+          }
+          socket.on(`f_${fileInfo.id}`, handleUpload);
+
+          socket.emit("f_ack", data.t);
         }
+
+        socket.broadcast.to(cid).emit("freceive", data.t);
       } catch (e) {
         console.log(e);
       }
@@ -76,13 +90,22 @@ function decryptSocketMessage(data: { t: string; c: string }) {
   };
 }
 
-function encryptSocketResponse(cid: string, data: string) {
+function getEndSignalForChannel(cid: string) {
+  const channel = getChannelById(cid || "");
+  if (!channel) {
+    return "";
+  }
+
+  return aesEncrypt('end', channel.secret);
+}
+
+function encryptSocketResponse(cid: string, data: any) {
   const channel = getChannelById(cid);
   if (!channel) {
     return "";
   }
 
-  return aesEncrypt(JSON.stringify(data), channel.secret);
+  return aesEncrypt(data, channel.secret);
 }
 
 export function getSocketIO() {

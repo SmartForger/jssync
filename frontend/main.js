@@ -56,22 +56,26 @@ function initSocketIO() {
   });
 
   socket.on("f_ack", async (data) => {
-    const decrypted = chatlib.decryptSocketResponse(data);
-    const fileInfo = JSON.parse(decrypted);
-    const f = fileUploader.getFileInfo(fileInfo.fileId);
-    if (!f) {
-      return;
+    const fileInfo = chatlib.decryptSocketResponse(data);
+
+    const ackHandler = (data) => {
+      const index = +chatlib.decryptData(data);
+      console.log(111, `f_${fileInfo.id}_ack`, index);
+
+      if (index < 0) {
+        uiFinishSendingFile(fileInfo.id, fileInfo.name);
+        fileUploader.removeFile(fileInfo.id);
+        socket.off(`f_${fileInfo.id}_ack`, ackHandler);
+      } else {
+        fileUploader.setChunkIndex(fileInfo.id, index);
+        uiSetFileProgress(fileInfo.id, fileUploader.getUploadProgress(fileInfo.id));
+        sendChunk(fileInfo.id);
+      }
     }
 
-    console.log('f_ack', fileInfo);
-    if (!fileInfo.complete) {
-      fileUploader.setChunkIndex(fileInfo.fileId, fileInfo.chunkIndex + 1);
-      uiSetFileProgress(fileInfo.fileId, fileUploader.getUploadProgress(fileInfo.fileId));
-      sendChunk(fileInfo.fileId);
-    } else {
-      uiFinishSendingFile(f.id, f.name);
-      fileUploader.removeFile(fileInfo.fileId);
-    }
+    socket.on(`f_${fileInfo.id}_ack`, ackHandler);
+
+    sendChunk(fileInfo.id);
   });
 }
 
@@ -101,10 +105,50 @@ async function sendMessage(data) {
       if (f) {
         console.log(222, f);
         uiStartSendingFile(f.id, f.name);
-        sendChunk(f.id);
+        sendFileInfo(f.id);
       }
     }
   }
+}
+
+async function sendFileInfo(fileId) {
+  const fileInfo = fileUploader.getFileInfo(fileId);
+  if (!fileInfo) {
+    throw new Error('file not found');
+  }
+
+  const uploadedData = {
+    id: fileInfo.id,
+    name: fileInfo.name,
+    totalSize: fileInfo.totalSize,
+  };
+
+  const sm = await chatlib.getSocketMessage(JSON.stringify(uploadedData));
+  socket.emit('fbroadcast', sm);
+  /*
+  let chunk = fileUploader.getChunk(fileId);
+
+  let i = 0;
+  let result = [];
+  while (chunk.size) {
+    const d = await chunk.arrayBuffer();
+    const dd = chatlib.encryptFileData(d);
+    result.push(dd);
+
+    fileUploader.setChunkIndex(fileId, ++i);
+    chunk= fileUploader.getChunk(fileId);
+  }
+
+  console.log(111);
+  const b = new Blob(result);
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(b);
+
+  const f = fileUploader.getFileInfo(fileId);
+  link.download = f.name;
+
+  document.body.appendChild(link);
+  link.click();*/
 }
 
 async function sendChunk(fileId) {
@@ -115,33 +159,15 @@ async function sendChunk(fileId) {
     }
 
     const chunk = fileUploader.getChunk(fileId);
-    let uploadedData = {};
+    let uploadData = null;
     if (chunk.size) {
-      const blobData = await chunk.text();
-      const temp = encodeURI(blobData);
-      uploadedData = {
-        chunk: temp,
-        chunkIndex: fileInfo.chunkIndex,
-        fileId: fileInfo.id,
-      };
-      if (fileInfo.chunkIndex === 0) {
-        uploadedData.filename = fileInfo.name;
-        uploadedData.totalSize = fileInfo.totalSize;
-      }
+      const d = await chunk.arrayBuffer();
+      uploadData = chatlib.encryptFileData(d);
     } else {
-      uploadedData = {
-        chunkIndex: fileInfo.chunkIndex,
-        fileId: fileInfo.id,
-        complete: true,
-      };
+      uploadData = 'end';
     }
 
-    const sm = await chatlib.getSocketMessage(JSON.stringify(uploadedData));
-    socket.emit('fbroadcast', sm);
-
-    if (!chunk.size) {
-      throw new Error('no more data');
-    }
+    socket.emit(`f_${fileInfo.id}`, uploadData);
   } catch (e) {
     console.error(e);
   }

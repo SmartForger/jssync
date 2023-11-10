@@ -146,9 +146,22 @@ export const ChatLib = ({ server = "" }) => {
     return { t: encryptedMsg, c: cid };
   }
 
+  function encryptData(data) {
+    return aesEncrypt(data, atob(channel.secret));
+  }
+
+  function decryptData(data) {
+    return aesDecrypt(data, atob(channel.secret));
+  }
+
   function decryptSocketResponse(data) {
-    const decrypted = aesDecrypt(data, atob(channel.secret));
+    const decrypted = decryptData(data);
     return JSON.parse(decrypted);
+  }
+
+  function encryptFileData(arraybuffer) {
+    const data = new Uint8Array(arraybuffer);
+    return aesEncrypt(data, atob(channel.secret));
   }
 
   return {
@@ -159,7 +172,10 @@ export const ChatLib = ({ server = "" }) => {
     getPublicKey,
     getSocketMessage,
     loadLocalData,
+    encryptData,
+    decryptData,
     decryptSocketResponse,
+    encryptFileData,
   };
 };
 
