@@ -32,30 +32,11 @@ function initSocketIO() {
     addMessage(decrypted.username, decrypted.message);
   });
 
-  socket.on('freceive', async (data) => {
-    const fileInfo = chatlib.decryptSocketResponse(data);
-
-    console.log('freceive', fileInfo);
-
-    fileUploader.startReceiving(fileInfo.id, fileInfo.name, fileInfo.totalSize);
-    uiStartReceivingFile(fileInfo.id, fileInfo.name);
-
-    const fileResponseHandler = (data) => {
-      const decrypted = chatlib.decryptFileData(data);
-      fileUploader.receiveChunk(fileInfo.id, decrypted);
-      sendFileReceiveRequest(fileInfo.id, hasMore);
-    }
-    socket.on(`f_res_${fileInfo.id}`, fileResponseHandler);
-
-    sendFileReceiveRequest(fileInfo.id);
-  });
-
   socket.on("f_ack", async (data) => {
     const fileInfo = chatlib.decryptSocketResponse(data);
 
     const ackHandler = (data) => {
       const index = +chatlib.decryptData(data);
-      console.log(111, `f_${fileInfo.id}_ack`, index);
 
       if (index < 0) {
         uiFinishSendingFile(fileInfo.id, fileInfo.name);
@@ -71,6 +52,41 @@ function initSocketIO() {
     socket.on(`f_${fileInfo.id}_ack`, ackHandler);
 
     sendChunk(fileInfo.id);
+  });
+
+  socket.on('freceive', async (data) => {
+    const fileInfo = chatlib.decryptSocketResponse(data);
+
+    console.log('freceive', fileInfo);
+
+    fileUploader.startReceiving(fileInfo.id, fileInfo.name, fileInfo.totalSize);
+    uiStartReceivingFile(fileInfo.id, fileInfo.name);
+
+    sendFileInfo(fileInfo.id, false);
+  });
+
+  socket.on("f_response", (data) => {
+    const fileInfo = chatlib.decryptSocketResponse(data);
+
+    const fileResponseHandler = (data) => {
+      const decrypted = chatlib.decryptFileData(data);
+      const hasMore = fileUploader.receiveChunk(fileInfo.id, decrypted);
+      sendFileReceiveRequest(fileInfo.id, hasMore);
+
+      if (!hasMore) {
+        socket.off(`f_res_${fileInfo.id}`, fileResponseHandler);
+        const f = fileUploader.getFileInfo(fileInfo.id);
+        if (f) {
+          const b = new Blob(f.data, { type: "octet/stream" });
+          uiFileReceived(fileInfo.id, fileInfo.name, b);
+        }
+      } else {
+        uiSetFileProgress(fileInfo.id, fileUploader.getUploadProgress(fileInfo.id));
+      }
+    }
+    socket.on(`f_res_${fileInfo.id}`, fileResponseHandler);
+
+    sendFileReceiveRequest(fileInfo.id);
   });
 }
 
@@ -98,7 +114,6 @@ async function sendMessage(data) {
     if (data.fileId) {
       const f = fileUploader.getFileInfo(data.fileId);
       if (f) {
-        console.log(222, f);
         uiStartSendingFile(f.id, f.name);
         sendFileInfo(f.id);
       }
@@ -106,7 +121,7 @@ async function sendMessage(data) {
   }
 }
 
-async function sendFileInfo(fileId) {
+async function sendFileInfo(fileId, isUpload = true) {
   const fileInfo = fileUploader.getFileInfo(fileId);
   if (!fileInfo) {
     throw new Error('file not found');
@@ -119,7 +134,7 @@ async function sendFileInfo(fileId) {
   };
 
   const sm = await chatlib.getSocketMessage(JSON.stringify(uploadedData));
-  socket.emit('fbroadcast', sm);
+  socket.emit(isUpload ? 'fbroadcast' : 'f_request', sm);
 }
 
 async function sendChunk(fileId) {

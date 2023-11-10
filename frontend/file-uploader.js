@@ -74,14 +74,16 @@ export const FileUploader = () => {
     if (fileInfo) {
       fileInfo.data.push(data);
       fileInfo.receivedSize += data.length;
-      console.log(333, 'received', fileInfo.receivedSize);
 
       if (fileInfo.totalSize > fileInfo.receivedSize) {
         fileInfo.chunkIndex++;
+        return true;
       } else {
         fileInfo.chunkIndex = -1;
       }
     }
+
+    return false;
   }
 
   return {
