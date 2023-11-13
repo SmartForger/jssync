@@ -74,6 +74,7 @@ export function setupSocketIO(server: HttpServer) {
             const index = +decrypted.data;
     
             if (index < 0) {
+              uploadManager.removeFile(fileInfo.id);
               socket.off(`f_req_${fileInfo.id}`, fileReqHandler);
             } else {
               const d = uploadManager.getFileData(fileInfo.id, index);
@@ -109,15 +110,6 @@ function decryptSocketMessage(data: { t: string; c: string }) {
     data: aesDecrypt(data.t, channel.secret),
     cid,
   };
-}
-
-function getEndSignalForChannel(cid: string) {
-  const channel = getChannelById(cid || "");
-  if (!channel) {
-    return "";
-  }
-
-  return aesEncrypt('end', channel.secret);
 }
 
 function encryptSocketResponse(cid: string, data: any) {
