@@ -1,4 +1,4 @@
-const CHUNK_SIZE = 10 * 1024;
+const CHUNK_SIZE = 50 * 1024;
 
 export const FileUploader = () => {
   const files = new Map();
