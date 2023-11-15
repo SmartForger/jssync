@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "nodemon -w src src/index.ts",
-    "frontend": "cd frontend && webpack",
+    "frontend": "cd frontend && webpack --config ./webpack.prod.config.js",
     "fwatch": "cd frontend && webpack --watch",
     "pack": "npm run build && node pack.js"
   },

@@ -9,7 +9,7 @@ module.exports = {
     filename: "[name].js", // this line is the only difference
     path: path.resolve(__dirname, "../public/chat/scripts"),
   },
-  mode: "production",
+  mode: "development",
   devtool: 'inline-source-map',
   plugins: [new CleanWebpackPlugin()],
   module: {
