@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
 import { generateRSAKeys } from "./cipher";
+import { createChannel } from "./channel";
 
 declare global {
   namespace Express {
@@ -44,6 +45,11 @@ const httpsServer = createServer(
 setupSocketIO(httpsServer);
 
 generateRSAKeys(() => {
+  createChannel({
+    username: "john",
+    password: "test",
+  });
+
   httpsServer.listen(port, () => {
     console.log(`Server is Fire at https://localhost:${port}`);
   });
