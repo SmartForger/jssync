@@ -8,7 +8,12 @@ import { FileInfo } from "./types";
 let io: Server;
 
 export function setupSocketIO(server: HttpServer) {
-  io = new Server(server);
+  io = new Server(server, {
+    cors: {
+      origin: "http://localhost:3000",
+      methods: ["GET", "POST"]
+    }
+  });
 
   io.on("connection", (socket) => {
     console.log("Client connected", socket.id);

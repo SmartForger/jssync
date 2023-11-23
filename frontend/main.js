@@ -11,12 +11,11 @@ import {
   uiFileReceived,
 } from "./ui";
 import { fileUploader } from './file-uploader';
-import { aesDecryptRaw, aesEncryptRaw } from "./cipher";
 
 let socket = null;
 
 function initSocketIO() {
-  socket = io();
+  socket = io(chatlibConfig.server);
 
   socket.on("connect", () => {
     const channel = chatlib.getChannel();
