@@ -1,6 +1,6 @@
 {
   "name": "jssync",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "",
   "scripts": {
     "build": "tsc",
@@ -8,7 +8,7 @@
     "dev": "nodemon -w src src/index.ts",
     "frontend": "cd frontend && webpack --config ./webpack.prod.config.js",
     "fwatch": "cd frontend && webpack --watch",
-    "pack": "npm run build && node pack.js"
+    "pack": "npm run build && npm run frontend && node pack.js"
   },
   "keywords": [],
   "author": "",
