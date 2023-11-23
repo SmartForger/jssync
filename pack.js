@@ -28,7 +28,9 @@ const fileList = [
   "package.json",
   "package-lock.json",
   ".nvmrc",
-  'keygen.exe'
+  'keygen.exe',
+  'cert.pem',
+  'key.pem'
 ];
 
 fileList.forEach((filename) => {
