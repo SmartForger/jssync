@@ -1,4 +1,4 @@
-import { rsaEncrypt, aesDecrypt, aesEncrypt } from "./cipher";
+import { rsaEncrypt, aesDecrypt, aesEncrypt, aesEncryptRaw, aesDecryptRaw } from "./cipher";
 
 export const ChatLib = ({ server = "" }) => {
   const STORAGE_KEY_AUTH = "auth";
@@ -161,11 +161,11 @@ export const ChatLib = ({ server = "" }) => {
 
   function encryptFileData(arraybuffer) {
     const data = new Uint8Array(arraybuffer);
-    return aesEncrypt(data, atob(channel.secret));
+    return aesEncryptRaw(data, atob(channel.secret));
   }
 
   function decryptFileData(data) {
-    const decrypted = aesDecrypt(data, atob(channel.secret));
+    const decrypted = aesDecryptRaw(data, atob(channel.secret));
     return Uint8Array.from(decrypted, (c) => c.charCodeAt(0));
   }
 

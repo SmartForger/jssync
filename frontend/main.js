@@ -11,6 +11,7 @@ import {
   uiFileReceived,
 } from "./ui";
 import { fileUploader } from './file-uploader';
+import { aesDecryptRaw, aesEncryptRaw } from "./cipher";
 
 let socket = null;
 

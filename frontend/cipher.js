@@ -52,3 +52,36 @@ export function aesDecrypt(data, key) {
 
   return decipher.output.data;
 }
+
+/**
+ *
+ * @param {string} data Uint8Array
+ * @param {byte[]} key 32 byte array aes key
+ * @returns
+ */
+export function aesEncryptRaw(data, key) {
+  const iv = forge.random.getBytesSync(32);
+  const cipher = forge.cipher.createCipher("AES-CBC", key);
+  cipher.start({ iv: iv });
+  cipher.update(forge.util.createBuffer(data));
+  cipher.finish();
+
+  return iv + cipher.output.data;
+}
+
+/**
+ *
+ * @param {string} data Uint8Array
+ * @param {byte[]} key 32 byte array aes key
+ * @returns
+ */
+export function aesDecryptRaw(data, key) {
+  const iv = data.slice(0, 32);
+  const ciphertext = data.slice(32);
+  const decipher = forge.cipher.createDecipher("AES-CBC", key);
+  decipher.start({ iv: iv });
+  decipher.update(forge.util.createBuffer(ciphertext));
+  decipher.finish();
+
+  return decipher.output.data;
+}
