@@ -1,7 +1,8 @@
 import express, { Request, Response, Application } from "express";
 import bodyParser from "body-parser";
-import cors from 'cors';
-import { createServer } from "http";
+import fs from 'fs';
+import cors from "cors";
+import { createServer } from "https";
 import dotenv from "dotenv";
 import { setupSocketIO } from "./socket";
 import { apiRoutes } from "./api";
@@ -33,11 +34,17 @@ app.use("/api", apiRoutes());
 
 app.use(express.static("public"));
 
-const httpServer = createServer(app);
-setupSocketIO(httpServer);
+const httpsServer = createServer(
+  {
+    key: fs.readFileSync("key.pem"),
+    cert: fs.readFileSync("cert.pem"),
+  },
+  app
+);
+setupSocketIO(httpsServer);
 
 generateRSAKeys(() => {
-  httpServer.listen(port, () => {
-    console.log(`Server is Fire at http://localhost:${port}`);
+  httpsServer.listen(port, () => {
+    console.log(`Server is Fire at https://localhost:${port}`);
   });
 });

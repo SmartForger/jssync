@@ -7,3 +7,5 @@ keygen
 keygen.exe
 public/chat/scripts/
 public/chat/config.js
+key.pem
+cert.pem
