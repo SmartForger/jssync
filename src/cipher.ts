@@ -6,7 +6,7 @@ let privateKeyPem = "";
 
 export const generateRSAKeys = (onSuccess: () => void) => {
   /** For development */
-  /*publicKey = forge.pki.publicKeyFromPem(`-----BEGIN PUBLIC KEY-----
+  publicKey = forge.pki.publicKeyFromPem(`-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzPob62+Jz6NeYgl/7lMW
 x43VXPAMWOxNAmGU+c1dL1tbeuP4UI+BMB3RGKc9vD+TOFU8oh/SXNkl9Gi422hH
 CMe47SFDLuMDXGMA19AmCeA2s4JMk2YCaMzfdEy3poOXnK33bErSZqmcnCBoJAWN
@@ -43,10 +43,10 @@ dDVJQQKBgQCiTOXIFTsyMHA/gMwRACOMv/6BEB9Mq10lDbk2ZTLjTmUktuKEeMfr
 hvTjn6/LsHUSdFkF5kUrc3MSo+Xci3zG3NhGLsCgM1K9AQQy/rBn1Q==
 -----END RSA PRIVATE KEY-----`;
   privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-  onSuccess();*/
+  onSuccess();
 
   /** For production */
-  forge.pki.rsa.generateKeyPair(
+  /*forge.pki.rsa.generateKeyPair(
     {
       bits: 2048,
       e: 0x10001,
@@ -58,7 +58,7 @@ hvTjn6/LsHUSdFkF5kUrc3MSo+Xci3zG3NhGLsCgM1K9AQQy/rBn1Q==
 
       onSuccess();
     }
-  );
+  );*/
 };
 
 export function decryptRSA(encrypted: string) {
