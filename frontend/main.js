@@ -69,6 +69,12 @@ function initSocketIO() {
     const fileInfo = chatlib.decryptSocketResponse(data);
 
     const fileResponseHandler = (data) => {
+      if (!data) {
+        const hasMore = fileUploader.hasMore(fileInfo.id);
+        sendFileReceiveRequest(fileInfo.id, hasMore);
+        return;
+      }
+
       const decrypted = chatlib.decryptFileData(data);
       const hasMore = fileUploader.receiveChunk(fileInfo.id, decrypted);
       sendFileReceiveRequest(fileInfo.id, hasMore);

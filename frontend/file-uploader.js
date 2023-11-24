@@ -1,4 +1,4 @@
-const CHUNK_SIZE = 50 * 1024;
+const CHUNK_SIZE = 400 * 1024;
 
 export const FileUploader = () => {
   const files = new Map();
@@ -69,6 +69,11 @@ export const FileUploader = () => {
     });
   }
 
+  const hasMore = (fileId) => {
+    const fileInfo = files.get(fileId);
+    return fileInfo &&  fileInfo.totalSize > fileInfo.receivedSize;
+  }
+
   const receiveChunk = (fileId, data) => {
     const fileInfo = files.get(fileId);
     if (fileInfo) {
@@ -95,6 +100,7 @@ export const FileUploader = () => {
     removeFile,
     startReceiving,
     receiveChunk,
+    hasMore,
   };
 };
 
